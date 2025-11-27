@@ -132,3 +132,6 @@ dist
 # Intellij
 
 .idea
+
+# Files folder
+files
