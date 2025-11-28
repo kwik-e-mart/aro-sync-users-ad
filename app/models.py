@@ -9,8 +9,8 @@ class ADUserCSV(BaseModel):
 
 class GroupMappingCSV(BaseModel):
     grupo: str
-    nrn: str
-    roles: str  # Comma separated roles in CSV likely
+    nrn: str  # Comma-separated NRNs (e.g., "nrn:app1,nrn:app2")
+    roles: str  # Comma-separated roles (e.g., "admin,viewer")
 
 # Internal Models
 class User(BaseModel):
@@ -34,7 +34,6 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_expires_at: int
     organization_id: int
-    account_id: int
 
 class NullplatformUser(BaseModel):
     id: int
@@ -59,9 +58,6 @@ class Role(BaseModel):
     id: int
     name: str
     slug: str
-    level: Optional[str] = None
-    description: str
-    can_assign_roles: List[str] = []
 
 class Grant(BaseModel):
     id: int

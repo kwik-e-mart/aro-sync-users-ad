@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: sync-localstack
+    ports:
+      - "4566:4566"  # LocalStack Gateway
+      - "4510-4559:4510-4559"  # External services port range
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - PERSISTENCE=1
+    volumes:
+      - "localstack-data:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh"
+    networks:
+      - sync-network
+
+  app:
+    build: .
+    container_name: sync-app
+    ports:
+      - "8080:8080"
+    environment:
+      # Nullplatform API Configuration
+      - NULLPLATFORM_API_KEY=${NULLPLATFORM_API_KEY}
+      - ORGANIZATION_ID=${ORGANIZATION_ID}
+      - AUTH_API_URL=${AUTH_API_URL:-https://auth.nullplatform.io}
+      - USERS_API_URL=${USERS_API_URL:-https://users.nullplatform.io}
+
+      # S3 Configuration for LocalStack
+      - S3_BUCKET=sync-bucket
+      - S3_AD_USERS_FILE=input/users.csv
+      - S3_MAPPING_FILE=input/mapping.csv
+      - S3_RESULTS_PREFIX=results/
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_ENDPOINT_URL=http://localstack:4566
+    depends_on:
+      - localstack
+    networks:
+      - sync-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8080
+
+networks:
+  sync-network:
+    driver: bridge
+
+volumes:
+  localstack-data:

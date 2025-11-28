@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "aro-sync-users-ad"
+name = "sync-users-ad"
 version = "0.1.0"
 description = "AD User Synchronization System"
 authors = ["Your Name <you@example.com>"]

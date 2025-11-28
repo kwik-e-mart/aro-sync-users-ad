@@ -6,7 +6,7 @@
 # - USERS_API_URL: Users API base URL (optional, default: https://users.nullplatform.io)
 #
 # Example:
-# docker run -e NULLPLATFORM_API_KEY=your_key_here -p 8080:8080 aro-sync-users-ad
+# docker run -e NULLPLATFORM_API_KEY=your_key_here -p 8080:8080 sync-users-ad
 
 FROM python:3.11-slim as builder
 

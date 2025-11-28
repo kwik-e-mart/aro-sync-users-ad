@@ -135,3 +135,6 @@ dist
 
 # Files folder
 files
+
+# Python
+__pycache__/

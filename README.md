@@ -117,21 +117,21 @@ Query parameters:
 Example using curl:
 ```bash
 curl -X POST "http://localhost:8080/sync" \
-  -F "ad_users_file=@ad_users.csv" \
+  -F "ad_users_file=@users.csv" \
   -F "mapping_file=@group_mapping.csv"
 ```
 
 Example with dry run:
 ```bash
 curl -X POST "http://localhost:8080/sync?dry_run=true" \
-  -F "ad_users_file=@ad_users.csv" \
+  -F "ad_users_file=@users.csv" \
   -F "mapping_file=@group_mapping.csv"
 ```
 
 Example with force mode:
 ```bash
 curl -X POST "http://localhost:8080/sync?force=true" \
-  -F "ad_users_file=@ad_users.csv" \
+  -F "ad_users_file=@users.csv" \
   -F "mapping_file=@group_mapping.csv"
 ```
 
@@ -197,7 +197,7 @@ poetry run pytest
 
 ## CSV File Format
 
-### AD Users File (`ad_users.csv`)
+### AD Users File (`users.csv`)
 ```csv
 Nombre,Correo,Grupo
 Jose Miguel Murrieta,jose.murrieta@example.com,Developers

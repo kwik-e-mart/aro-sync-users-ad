@@ -50,25 +50,34 @@ class NullplatformClient:
         offset: int = 0,
         limit: int = 100,
         user_type: str = "person",
-        status: str = "active"
+        status: Optional[str] = None
     ) -> UserListResponse:
         params = {
             "type": user_type,
-            "status": status,
             "limit": limit,
             "offset": offset,
             "organization_id": self.config.organization_id,
         }
+        # Only add status filter if specified (allows fetching all users regardless of status)
+        if status:
+            params["status"] = status
+
         response = self._request("GET", f"{self.config.users_api_url}/user/", params=params)
         return UserListResponse(**response.json())
 
-    def list_all_users(self) -> List[NullplatformUser]:
+    def list_all_users(self, status: Optional[str] = None) -> List[NullplatformUser]:
+        """
+        List all users in the organization.
+
+        Args:
+            status: Optional status filter ("active", "inactive", or None for all users)
+        """
         all_users = []
         offset = 0
         limit = 100
 
         while True:
-            response = self.list_users(offset=offset, limit=limit)
+            response = self.list_users(offset=offset, limit=limit, status=status)
             all_users.extend(response.results)
 
             if len(response.results) < limit:
@@ -125,9 +134,10 @@ class NullplatformClient:
             "user_id": user_id,
             "nrn": nrn,
         }
+        print(f"Creating grant with payload: {payload} for user_id: {user_id}, role_slug: {role_slug}, nrn: {nrn}")
         response = self._request(
             "POST",
-            f"{self.config.auth_api_url}/authz/grant",
+            f"{self.config.auth_api_url}/authz/grants",
             json=payload,
         )
         return response.json()
@@ -135,7 +145,7 @@ class NullplatformClient:
     def delete_grant(self, grant_id: int) -> None:
         self._request(
             "DELETE",
-            f"{self.config.auth_api_url}/authz/grant/{grant_id}",
+            f"{self.config.auth_api_url}/authz/grants/{grant_id}",
         )
 
     def close(self):

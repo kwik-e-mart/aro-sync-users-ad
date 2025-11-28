@@ -12,7 +12,7 @@ La solución está diseñada como una aplicación Python containerizada que se e
 graph TD
     subgraph AWS Cloud
         S3[AWS S3 Bucket]
-        S3_Users[ad_users.csv]
+        S3_Users[users.csv]
         S3_Map[group_mapping.csv]
         S3 --> S3_Users
         S3 --> S3_Map
@@ -101,7 +101,7 @@ sequenceDiagram
 
     Extractor->>AD: Query Users & Groups
     AD-->>Extractor: User Data
-    Extractor->>S3: Upload ad_users.csv
+    Extractor->>S3: Upload users.csv
     
     Note over S3, Sync: Scheduled later
     Sync->>S3: Download CSVs

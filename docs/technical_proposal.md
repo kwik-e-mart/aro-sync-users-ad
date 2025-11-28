@@ -12,7 +12,7 @@ The solution is designed as a containerized Python application running as a **Ku
 graph TD
     subgraph AWS Cloud
         S3[AWS S3 Bucket]
-        S3_Users[ad_users.csv]
+        S3_Users[users.csv]
         S3_Map[group_mapping.csv]
         S3 --> S3_Users
         S3 --> S3_Map
@@ -42,7 +42,7 @@ graph TD
 ```
 
 ### 2.2 Components
-- **Input Source (AWS S3)**: Stores the `ad_users.csv` and `group_mapping.csv` files.
+- **Input Source (AWS S3)**: Stores the `users.csv` and `group_mapping.csv` files.
 - **Execution Environment (Kubernetes)**:
     - **CronJob**: Schedules the execution of the synchronization process (e.g., nightly).
     - **Container**: Dockerized Python application containing the business logic.
@@ -53,7 +53,7 @@ graph TD
 ## 3. Business Logic
 The synchronization process follows these steps:
 1.  **Fetch**: Download CSV files from the configured S3 bucket.
-2.  **Parse**: Read `ad_users.csv` (User, Email, Group) and `group_mapping.csv` (Group, Namespace, Roles).
+2.  **Parse**: Read `users.csv` (User, Email, Group) and `group_mapping.csv` (Group, Namespace, Roles).
 3.  **Sync Loop**:
     *   **Identify Removals**: Users present in the internal repository but missing from the AD CSV are **deleted**.
     *   **Identify Creations/Updates**: Iterate through AD CSV users:
@@ -100,7 +100,7 @@ sequenceDiagram
 
     Extractor->>AD: Query Users & Groups
     AD-->>Extractor: User Data
-    Extractor->>S3: Upload ad_users.csv
+    Extractor->>S3: Upload users.csv
     
     Note over S3, Sync: Scheduled later
     Sync->>S3: Download CSVs

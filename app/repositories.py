@@ -1,4 +1,5 @@
 from typing import List, Optional
+from urllib import response
 from .models import User
 from .client import NullplatformClient
 
@@ -7,35 +8,42 @@ class UserRepository:
     def __init__(self, client: NullplatformClient):
         self.client = client
         self._user_cache: Optional[List[User]] = None
-        def _parse_name(self, username: str, email: str) -> tuple[str, str]:
-            # Try parsing from username first (e.g., "Carlos Vives", "Carlos Antonio Vives")
-            if username and " " in username.strip():
-                parts = username.strip().split()
-                first_name = parts[0].capitalize()
-                last_name = " ".join(parts[1:]).title()
-                return first_name, last_name
-            
-            # Fall back to dot-separated username
-            if username and "." in username:
-                parts = username.split(".")
+
+    def _parse_name(self, username: str, email: str) -> tuple[str, str]:
+        # Try parsing from username first (e.g., "Carlos Vives", "Carlos Antonio Vives")
+        if username and " " in username.strip():
+            parts = username.strip().split()
+            first_name = parts[0].capitalize()
+            last_name = " ".join(parts[1:]).title()
+            return first_name, last_name
+
+        # Fall back to dot-separated username
+        if username and "." in username:
+            parts = username.split(".")
+            first_name = parts[0].capitalize()
+            last_name = parts[1].capitalize() if len(parts) > 1 else ""
+            return first_name, last_name
+
+        # Fall back to email parsing
+        if "@" in email:
+            local_part = email.split("@")[0]
+            if "." in local_part:
+                parts = local_part.split(".")
                 first_name = parts[0].capitalize()
                 last_name = parts[1].capitalize() if len(parts) > 1 else ""
                 return first_name, last_name
+            return local_part.capitalize(), ""
 
-            # Fall back to email parsing
-            if "@" in email:
-                local_part = email.split("@")[0]
-                if "." in local_part:
-                    parts = local_part.split(".")
-                    first_name = parts[0].capitalize()
-                    last_name = parts[1].capitalize() if len(parts) > 1 else ""
-                    return first_name, last_name
-                return local_part.capitalize(), ""
+        return "", ""
 
-        return ""
+    def list_all(self, status: Optional[str] = None) -> List[User]:
+        """
+        List all users.
 
-    def list_all(self) -> List[User]:
-        nullplatform_users = self.client.list_all_users()
+        Args:
+            status: Optional status filter ("active", "inactive", or None for all users)
+        """
+        nullplatform_users = self.client.list_all_users(status=status)
 
         users = []
         for np_user in nullplatform_users:
@@ -73,10 +81,15 @@ class UserRepository:
         return created_user
 
     def delete(self, user_id: str) -> None:
+        """Mark a user as inactive."""
         self.client.update_user_status(int(user_id), "inactive")
 
         if self._user_cache is not None:
             self._user_cache = [u for u in self._user_cache if u.id != user_id]
+
+    def reactivate(self, user_id: str) -> None:
+        """Reactivate an inactive user."""
+        self.client.update_user_status(int(user_id), "active")
 
     def get_by_email(self, email: str) -> Optional[User]:
         if self._user_cache is None:
@@ -109,8 +122,15 @@ class AuthzRepository:
         return roles
 
     def update_roles(self, user_id: str, nrn: str, expected_roles: List[str]) -> None:
+        """
+        Update user roles by sending individual operations:
+        - Add a role: POST /authz/grant with { nrn, user_id, role_slug }
+        - Remove a role: DELETE /authz/grant/{id} with just the grant ID
+        """
+        # Get current grants for this user and NRN
         current_grants = self.client.get_user_grants(int(user_id))
 
+        # Build a map of current roles to their grant IDs
         current_role_to_grant_id = {}
         if current_grants:
             for grant_response in current_grants:
@@ -121,9 +141,14 @@ class AuthzRepository:
         current_roles = set(current_role_to_grant_id.keys())
         expected_roles_set = set(expected_roles)
 
+        # Calculate roles to add and remove
         roles_to_remove = current_roles - expected_roles_set
         roles_to_add = expected_roles_set - current_roles
 
+        # Log the planned changes
+        print(f"User ID {user_id} - Roles to add: {roles_to_add}, Roles to remove: {roles_to_remove}")
+
+        # Remove roles individually: DELETE /authz/grant/{id}
         for role_slug in roles_to_remove:
             grant_id = current_role_to_grant_id[role_slug]
             try:
@@ -131,8 +156,10 @@ class AuthzRepository:
             except Exception as e:
                 print(f"Error deleting grant {grant_id} for role {role_slug}: {e}")
 
+        # Add roles individually: POST /authz/grant
         for role_slug in roles_to_add:
             try:
-                self.client.create_grant(int(user_id), role_slug, nrn)
+                response = self.client.create_grant(int(user_id), role_slug, nrn)
+                print(f"Created grant: {response}")
             except Exception as e:
                 print(f"Error creating grant for role {role_slug}: {e}")
