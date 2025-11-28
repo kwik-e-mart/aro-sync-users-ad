@@ -1,19 +1,19 @@
-# Technical Proposal: AD Users Synchronization System
+# Propuesta Técnica: Sistema de Sincronización de Usuarios AD
 
-## 1. Executive Summary
-This document outlines the architecture and design for a system to synchronize Active Directory (AD) users and their permissions with an internal authorization system. The system reads user and mapping data from CSV files stored in AWS S3 and executes synchronization logic to ensure the internal state matches the source of truth.
+## 1. Resumen
+Este documento describe la arquitectura y el diseño de un sistema para sincronizar usuarios de Entra ID y sus permisos con nullplatform. El sistema lee datos de usuarios y mapeos desde archivos CSV almacenados en AWS S3 y ejecuta la lógica de sincronización para asegurar que el estado interno coincida con la fuente de verdad.
 
-## 2. Architecture
+## 2. Arquitectura
 
-### 2.1 Overview
-The solution is designed as a containerized Python application running as a **Kubernetes CronJob**. It interacts with AWS S3 to retrieve input data and internal repositories to apply changes.
+### 2.1 Visión General
+La solución está diseñada como una aplicación Python containerizada que se ejecuta como un **Kubernetes CronJob**. Interactúa con AWS S3 para recuperar datos de entrada y APIs de nullplatform para aplicar cambios.
 
 ```mermaid
 graph TD
     subgraph AWS Cloud
         S3[AWS S3 Bucket]
         S3_Users[users.csv]
-        S3_Map[group_mapping.csv]
+        S3_Map[mapping.csv]
         S3 --> S3_Users
         S3 --> S3_Map
     end
@@ -41,59 +41,65 @@ graph TD
     Logic -->|Update| AuthzRepo
 ```
 
-### 2.2 Components
-- **Input Source (AWS S3)**: Stores the `users.csv` and `group_mapping.csv` files.
-- **Execution Environment (Kubernetes)**:
-    - **CronJob**: Schedules the execution of the synchronization process (e.g., nightly).
-    - **Container**: Dockerized Python application containing the business logic.
-- **Application Logic**:
-    - **Parsers**: Validates and parses CSV inputs.
-    - **Sync Engine**: Compares source data with internal state and determines necessary actions (Create, Update, Delete).
+### 2.2 Componentes
+- **Fuente de Entrada (AWS S3)**: Almacena los archivos `users.csv` y `mapping.csv`.
+- **Entorno de Ejecución (Kubernetes)**:
+    - **CronJob**: Programa la ejecución del proceso de sincronización (ej. cada hora).
+    - **Contenedor**: Aplicación Python dockerizada que contiene la lógica de negocio.
+- **Lógica de Aplicación**:
+    - **Parsers**: Valida y parsea las entradas CSV.
+    - **Motor de Sync**: Compara los datos fuente con el estado en las APIs de nullplatform y determina las acciones necesarias (Crear, Actualizar, Eliminar).
 
-## 3. Business Logic
-The synchronization process follows these steps:
-1.  **Fetch**: Download CSV files from the configured S3 bucket.
-2.  **Parse**: Read `users.csv` (User, Email, Group) and `group_mapping.csv` (Group, Namespace, Roles).
-3.  **Sync Loop**:
-    *   **Identify Removals**: Users present in the internal repository but missing from the AD CSV are **deleted**.
-    *   **Identify Creations/Updates**: Iterate through AD CSV users:
-        *   If the user does not exist internally, **create** them.
-        *   Determine expected roles based on the Group -> Namespace/Roles mapping.
-        *   Compare with current roles and **update** if necessary.
-4.  **Reporting**: Generate a summary of actions taken (Processed, Created, Updated, Deleted, Skipped).
+## 3. Lógica de Negocio
+El proceso de sincronización sigue estos pasos:
+1.  **Obtención**: Descargar archivos CSV del bucket S3 configurado, las rutas de los archivos estara determinada en configuracion.
+2.  **Parseo**: Leer `users.csv` (Nombre, Correo, Grupo) y `mapping.csv` (Grupo, NRNs, Roles).
+3.  **Ciclo de Sync**:
+    *   **Identificar Eliminaciones**: Los usuarios presentes en nullplatform pero faltantes en el CSV de AD son **eliminados**, estos usuarios ya no podran ingresar a nullplatform hasta su reactivacion.
+    *   **Identificar Creaciones/Actualizaciones**: Iterar a través de los usuarios del CSV de AD:
+        *   Si el usuario no existe en nullplatform, **crearlo**.
+        *   Si el usuario existe pero se encuentra desactivado, **reactivarlo**.
+        *   Determinar roles esperados basados en el mapeo Grupo -> Namespaces/Roles.
+        *   Comparar con roles actuales y **actualizar** o **elimina** si es necesario.
+4.  **Reporte**: Generar un resumen de acciones tomadas (Procesados, Creados, Actualizados, Eliminados, Omitidos) en el mismo bucket de S3 donde se encuentran los inputs, en un folder llamado `/results`
 
-## 4. Validations (Non-Critical)
-The system implements several safeguards. These validations can be bypassed in **Force** mode but will stop execution in **Normal** mode if violated.
+## 4. Validaciones (No Críticas)
+El sistema implementa varias salvaguardas. Estas validaciones pueden ser omitidas en modo **Force** pero detendrán la ejecución en modo **Normal** si se violan.
 
-1.  **Mass Deletion Protection**:
-    - **Rule**: Do not remove more than **X%** (configurable, e.g., 20%) of the total user base in a single run.
-    - **Reason**: Prevents accidental wiping of the user directory due to a corrupted or empty input file.
+1.  **Protección contra Eliminación Masiva**:
+    - **Regla**: No eliminar más del **X%** (configurable, ej. 20%) de la base total de usuarios en una sola ejecución.
+    - **Razón**: Previene el borrado accidental del directorio de usuarios debido a un archivo de entrada corrupto o vacío.
 
-2.  **Email Validation**:
-    - **Rule**: Users must have a syntactically valid email address.
-    - **Action**: Users with invalid emails are skipped and logged.
+2.  **Validación de Correo**:
+    - **Regla**: Los usuarios deben tener una dirección de correo sintácticamente válida.
+    - **Acción**: Los usuarios con correos inválidos son omitidos y registrados.
 
-3.  **Duplicate Detection**:
-    - **Rule**: The input CSV must not contain duplicate user entries.
-    - **Action**: Duplicates are flagged, and the execution may halt or skip duplicates depending on configuration.
+3.  **Detección de Duplicados**:
+    - **Regla**: El CSV de entrada no debe contener entradas de usuarios duplicadas.
+    - **Acción**: Los duplicados son marcados, y la ejecución puede detenerse u omitir duplicados dependiendo de la configuración.
 
-## 5. Execution Modes
-The application supports three distinct execution modes to ensure safety and flexibility:
+4.  **Deteccion de cambios en los archivos de inputs**:
+    - **Regla**: No ejecutar el flujo si los archivos no han sufrido cambios desde la ultima ejecucion.
+    - **Razón**: Cada ejecucion guarda sus resultados en un archivo de S3 cuyo nombre resulta del md5 de los archivos de inputs, si ya existe una ejecucion para esa version de ambos archivos no se ejecuta el proceso.
 
-| Mode | Description | Behavior |
+## 5. Modos de Ejecución
+La aplicación soporta tres modos de ejecución distintos para asegurar seguridad y flexibilidad:
+
+| Modo | Descripción | Comportamiento |
 | :--- | :--- | :--- |
-| **Dry Run** | Simulation mode. | • Validates input files.<br>• Calculates differences (Diff).<br>• Logs what *would* happen.<br>• **No changes** are applied to repositories. |
-| **Normal** | Standard execution. | • Validates input files.<br>• Applies changes (Create/Update/Delete).<br>• Stops on critical validation errors.<br>• Generates execution report. |
-| **Force** | Emergency/Override mode. | • Attempts to proceed despite non-critical validation errors.<br>• Useful for partial syncs or bypassing specific safety checks.<br>• Applies changes and reports errors. |
+| **Dry Run** | Modo simulación. | • Valida archivos de entrada.<br>• Calcula diferencias (Diff).<br>• Registra lo que *pasaría*.<br>• **No se aplican cambios** en los sistemas de nullplatform. |
+| **Normal** | Ejecución estándar. | • Valida archivos de entrada.<br>• Aplica cambios (Crear/Actualizar/Eliminar).<br>• Se detiene en errores de validación críticos.<br>• Genera reporte de ejecución. |
+| **Force** | Modo emergencia/override. | • Intenta proceder a pesar de errores de validación no críticos.<br>• Útil para sincronizaciones parciales o para omitir chequeos de seguridad específicos.<br>• Aplica cambios y reporta errores. |
 
-## 6. Future Roadmap
+## 6. Estructura de datos
+Roles validos: developer, member, ops, secops, admin
 
-### Phase 2: Automated AD Extraction
-A second Kubernetes CronJob will be introduced to automate the generation of the source CSV file.
+### Fase 2: Extracción Automatizada de EntraID
+Se introducirá un segundo Kubernetes CronJob para automatizar la generación del archivo CSV fuente.
 
 ```mermaid
 sequenceDiagram
-    participant AD as Active Directory
+    participant AD as EntraID
     participant Extractor as AD Extractor CronJob
     participant S3 as AWS S3
     participant Sync as User Sync CronJob
@@ -103,9 +109,9 @@ sequenceDiagram
     Extractor->>S3: Upload users.csv
     
     Note over S3, Sync: Scheduled later
-    Sync->>S3: Download CSVs
+    Sync->>S3: Read CSVs
     Sync->>Sync: Execute Synchronization
 ```
 
-- **AD Extractor CronJob**: Connects directly to Active Directory via LDAP/Graph API, formats the data into the required CSV structure, and uploads it to S3.
-- **Decoupling**: This separates the extraction complexity from the synchronization logic, allowing independent scaling and maintenance.
+- **AD Extractor CronJob**: Se conecta directamente a EntraID via API, formatea los datos en la estructura CSV requerida, y los sube a S3.
+- **Desacoplamiento**: Esto separa la complejidad de extracción de la lógica de sincronización, permitiendo escalado y mantenimiento independientes.
