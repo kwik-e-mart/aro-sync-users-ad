@@ -1,0 +1,12 @@
+# Dockerfile for cron job that triggers the sync endpoint
+FROM alpine:3.19
+
+# Install curl and jq for API calls
+RUN apk add --no-cache curl jq
+
+# Copy the cron script
+COPY scripts/trigger-sync.sh /usr/local/bin/trigger-sync.sh
+RUN chmod +x /usr/local/bin/trigger-sync.sh
+
+# Set the entrypoint to the script
+ENTRYPOINT ["/usr/local/bin/trigger-sync.sh"]
