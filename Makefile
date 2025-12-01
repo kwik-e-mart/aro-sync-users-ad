@@ -53,21 +53,21 @@ build:
 # Build docker-image asset (main API)
 build-docker:
 	@echo "Building docker-image asset..."
-	docker build -t aro-sync-users-ad:latest -f Dockerfile .
+	docker build -t aro-sync-users-ad -f Dockerfile .
 
 # Build cron asset (sync trigger)
 build-cron:
 	@echo "Building cron asset..."
-	docker build -t aro-sync-users-ad-cron:latest -f Dockerfile.cron .
+	docker build -t aro-sync-users-ad-cron -f Dockerfile.cron .
 
 # Generic push target (requires ASSET_TYPE env var)
 push:
 ifeq ($(ASSET_TYPE),docker-image)
 	@echo "Pushing docker-image asset..."
-	np asset push --type docker-image --source aro-sync-users-ad:latest
+	np asset push --type docker-image --source aro-sync-users-ad
 else ifeq ($(ASSET_TYPE),cron)
 	@echo "Pushing cron asset..."
-	np asset push --type docker-image --source aro-sync-users-ad-cron:latest
+	np asset push --type docker-image --source aro-sync-users-ad-cron
 else
 	@echo "ERROR: ASSET_TYPE must be set to 'docker-image' or 'cron'"
 	@exit 1
@@ -76,12 +76,12 @@ endif
 # Push docker-image asset
 push-docker:
 	@echo "Pushing docker-image asset to Nullplatform..."
-	np asset push --type docker-image --source aro-sync-users-ad:latest
+	np asset push --type docker-image --source aro-sync-users-ad
 
 # Push cron asset
 push-cron:
 	@echo "Pushing cron asset to Nullplatform..."
-	np asset push --type docker-image --source aro-sync-users-ad-cron:latest
+	np asset push --type docker-image --source aro-sync-users-ad-cron
 
 # Upload sample files
 upload-samples:
