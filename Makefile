@@ -64,10 +64,10 @@ build-cron:
 push:
 ifeq ($(ASSET_TYPE),docker-image)
 	@echo "Pushing docker-image asset..."
-	np asset push --type docker-image --source aro-sync-users-ad
+	np asset push --type docker-image --name aro-sync-users-ad --source aro-sync-users-ad
 else ifeq ($(ASSET_TYPE),cron)
 	@echo "Pushing cron asset..."
-	np asset push --type docker-image --source aro-sync-users-ad-cron
+	np asset push --type docker-image --name aro-sync-users-ad-cron --source aro-sync-users-ad-cron
 else
 	@echo "ERROR: ASSET_TYPE must be set to 'docker-image' or 'cron'"
 	@exit 1
@@ -76,12 +76,12 @@ endif
 # Push docker-image asset
 push-docker:
 	@echo "Pushing docker-image asset to Nullplatform..."
-	np asset push --type docker-image --source aro-sync-users-ad
+	np asset push --type docker-image --name aro-sync-users-ad --source aro-sync-users-ad
 
 # Push cron asset
 push-cron:
 	@echo "Pushing cron asset to Nullplatform..."
-	np asset push --type docker-image --source aro-sync-users-ad-cron
+	np asset push --type docker-image --name aro-sync-users-ad-cron --source aro-sync-users-ad-cron
 
 # Upload sample files
 upload-samples:
