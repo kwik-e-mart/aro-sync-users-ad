@@ -9,7 +9,7 @@ class ADUserCSV(BaseModel):
 
 class GroupMappingCSV(BaseModel):
     grupo: str
-    nrn: str  # Comma-separated NRNs (e.g., "nrn:app1,nrn:app2")
+    nrn: str  # Comma-separated NRNs (e.g., "nrn:app1,nrn:app2") or "*" for organization-level
     roles: str  # Comma-separated roles (e.g., "admin,viewer")
 
 # Internal Models

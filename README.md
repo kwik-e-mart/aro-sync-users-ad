@@ -209,10 +209,24 @@ Edwin Garces,edwin.garces@example.com,Admins
 grupo,nrn,roles
 Developers,organization=1612316954:account=1217921210:namespace=595266136,"developer,member"
 Admins,organization=1612316954:account=1217921210:namespace=595266136,admin
+OrgViewers,*,"viewer,member"
 ```
 
-**Note:** The `nrn` column contains the full Nullplatform NRN (Namespace Resource Name) in the format:
-`organization={org_id}:account={account_id}:namespace={namespace_id}`
+**NRN Column Format:**
+
+The `nrn` column can contain:
+1. **Full NRN**: Specific Nullplatform NRN (Namespace Resource Name)
+   - Format: `organization={org_id}:account={account_id}:namespace={namespace_id}`
+   - Example: `organization=1612316954:account=1217921210:namespace=595266136`
+
+2. **Multiple NRNs**: Comma-separated list of NRNs
+   - Format: `nrn1,nrn2,nrn3`
+   - Example: `organization=123:account=456,organization=123:namespace=789`
+
+3. **Wildcard (`*`)**: Organization-level access
+   - When you use `*`, it automatically resolves to `organization={ORGANIZATION_ID}`
+   - Use this for users who need organization-wide access
+   - Example: `*` → resolves to `organization=1850605908` (based on your ORGANIZATION_ID env var)
 
 ## Architecture
 

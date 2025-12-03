@@ -39,6 +39,21 @@ class SyncService:
         self.authz_repo = authz_repo
         self.csv_service = CSVService()
 
+    def _resolve_nrn(self, nrn: str) -> str:
+        """
+        Resolve NRN value, replacing '*' wildcard with organization NRN.
+
+        Args:
+            nrn: NRN value from CSV (can be '*' for organization-level access)
+
+        Returns:
+            Resolved NRN string
+        """
+        if nrn.strip() == '*':
+            from .config import config
+            return f"organization={config.organization_id}"
+        return nrn
+
     def execute_sync(
         self,
         ad_users_file: bytes,
@@ -119,7 +134,7 @@ class SyncService:
             # Parse comma-separated roles
             expected_roles = [r.strip() for r in mapping.roles.split(',') if r.strip()]
 
-            # Parse comma-separated NRNs (e.g., "nrn:app1,nrn:app2")
+            # Parse comma-separated NRNs (e.g., "nrn:app1,nrn:app2" or "*")
             nrns = [n.strip() for n in mapping.nrn.split(',') if n.strip()]
 
             # Initialize user entry if needed
@@ -128,13 +143,20 @@ class SyncService:
 
             # Apply the same roles to all NRNs in this mapping
             for nrn in nrns:
+                # Resolve wildcard NRN
+                resolved_nrn = self._resolve_nrn(nrn)
+
+                # Log wildcard resolution
+                if nrn.strip() == '*':
+                    logs.append(f"Resolved wildcard NRN '*' to '{resolved_nrn}' for user {ad_user.correo}")
+
                 # Store roles for this NRN (handle duplicate rows by merging roles)
-                if nrn in user_nrn_roles[email_lower]:
+                if resolved_nrn in user_nrn_roles[email_lower]:
                     # Merge roles if same user+nrn appears multiple times
-                    user_nrn_roles[email_lower][nrn].extend(expected_roles)
-                    user_nrn_roles[email_lower][nrn] = list(set(user_nrn_roles[email_lower][nrn]))
+                    user_nrn_roles[email_lower][resolved_nrn].extend(expected_roles)
+                    user_nrn_roles[email_lower][resolved_nrn] = list(set(user_nrn_roles[email_lower][resolved_nrn]))
                 else:
-                    user_nrn_roles[email_lower][nrn] = expected_roles
+                    user_nrn_roles[email_lower][resolved_nrn] = expected_roles
 
         # 5. Process each unique user
         for email_lower, nrn_roles_map in user_nrn_roles.items():

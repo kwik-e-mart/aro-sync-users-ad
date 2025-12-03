@@ -51,7 +51,9 @@ class S3Service:
             return ad_users_content, mapping_content
 
         except ClientError as e:
-            raise Exception(f"Error fetching files from S3: {str(e)}, config: {self.config} ")
+            raise Exception(f"S3 ClientError: {str(e)}, Bucket: {self.config.s3_bucket}, Region: {self.config.aws_region}, Endpoint: {self.config.aws_endpoint_url}")
+        except Exception as e:
+            raise Exception(f"Error fetching files from S3: {str(e)}, Bucket: {self.config.s3_bucket}, Region: {self.config.aws_region}, Endpoint: {self.config.aws_endpoint_url}")
 
     def check_existing_result(self, md5_hash: str) -> Optional[SyncResult]:
         """
