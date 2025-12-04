@@ -1,13 +1,50 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from contextlib import asynccontextmanager
 from .models import SyncResult
 from .repositories import UserRepository, AuthzRepository
-from .services import SyncService
+from .services import SyncService, CSVService
 from .s3_service import S3Service
 from .config import config
 from .client import NullplatformClient
 from .auth import verify_api_key
+from .scim_service import ScimService
+from .scim_router import router as scim_router
 
-app = FastAPI(title="AD User Sync API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan event handler for startup/shutdown tasks.
+    Load group mappings from S3 on startup to make them available to SCIM service.
+    """
+    # Startup: Load group mappings
+    try:
+        # Try to fetch mapping file from S3
+        _, mapping_content = app.state.s3_service.fetch_input_files()
+        mappings = app.state.csv_service.parse_group_mapping(mapping_content)
+
+        # Convert mappings to dict format for SCIM service
+        mapping_dict = {}
+        for mapping in mappings:
+            roles = [r.strip() for r in mapping.roles.split(',') if r.strip()]
+            mapping_dict[mapping.grupo] = {
+                "nrn": mapping.nrn,
+                "roles": roles
+            }
+
+        app.state.scim_service.set_group_mappings(mapping_dict)
+        print(f"Loaded {len(mapping_dict)} group mappings from S3 for SCIM service")
+    except Exception as e:
+        print(f"Warning: Could not load group mappings from S3: {e}")
+        print("SCIM endpoints will work but groups will be empty until a sync is performed")
+
+    yield
+
+    # Shutdown: cleanup if needed
+    print("Shutting down...")
+
+
+app = FastAPI(title="AD User Sync API with SCIM Support", lifespan=lifespan)
 
 # Initialize Nullplatform client
 nullplatform_client = NullplatformClient(config)
@@ -17,6 +54,21 @@ user_repo = UserRepository(nullplatform_client)
 authz_repo = AuthzRepository(nullplatform_client)
 sync_service = SyncService(user_repo, authz_repo)
 s3_service = S3Service(config)
+
+# Initialize SCIM service
+scim_service = ScimService(user_repo, authz_repo)
+
+# CSV service for loading group mappings
+csv_service = CSVService()
+
+# Store services in app state for lifespan and dependency injection
+app.state.scim_service = scim_service
+app.state.s3_service = s3_service
+app.state.csv_service = csv_service
+
+# Include SCIM router
+app.include_router(scim_router)
+
 
 @app.post("/sync", response_model=SyncResult)
 async def sync_users(
