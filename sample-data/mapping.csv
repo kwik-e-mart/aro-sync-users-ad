@@ -1,0 +1,6 @@
+grupo,nrn,roles
+GrupoA,"organization=1698562351","developer,member"
+GrupoB,"organization=1698562351",admin
+GrupoC,"organization=1698562351","admin"
+GrupoD,"organization=1850605908,organization=1850605908:account=56492458","developer,ops,admin"
+GrupoE,*,"viewer,member"

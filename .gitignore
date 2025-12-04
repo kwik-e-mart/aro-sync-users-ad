@@ -132,3 +132,9 @@ dist
 # Intellij
 
 .idea
+
+# Files folder
+files
+
+# Python
+__pycache__/

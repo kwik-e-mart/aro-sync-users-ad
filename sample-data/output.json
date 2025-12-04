@@ -1,0 +1,25 @@
+{
+  "status": "success",
+  "users_processed": 11,
+  "users_created": 1,
+  "users_deleted": 1,
+  "users_updated": 10,
+  "logs": [
+    "Starting synchronization process in DRY RUN mode...",
+    "DRY RUN MODE: No actual changes will be made to users or roles.",
+    "Parsed 11 AD users and 3 group mappings.",
+    "[DRY RUN] Would mark user federico.maleh+implementations@nullplatform.io as inactive (not in AD file).",
+    "[DRY RUN] Would update user javier.solis+implementations@nullplatform.io roles in NRN 'organization=1698562351' from ['admin', 'developer', 'member', 'ops', 'secops'] to ['admin', 'member'].",
+    "[DRY RUN] Would update user agustin.celentano+implementations@nullplatform.io roles in NRN 'organization=1698562351' from ['admin', 'developer', 'member', 'ops', 'secops', 'insights-viewer'] to ['admin', 'member'].",
+    "[DRY RUN] Would update user david.fernandez+implementations@nullplatform.io roles in NRN 'organization=1698562351' from ['insights-viewer', 'secops', 'member', 'ops', 'developer', 'admin'] to ['admin'].",
+    "[DRY RUN] Would update user sebastian.correa+implementations@nullplatform.io roles in NRN 'organization=1698562351' from ['member', 'ops', 'admin', 'developer', 'insights-viewer', 'secops'] to ['developer', 'member'].",
+    "[DRY RUN] Would update user julian+implementations@nullplatform.io roles in NRN 'organization=1698562351' from ['admin', 'developer', 'member', 'ops', 'secops', 'insights-viewer'] to ['admin'].",
+    "[DRY RUN] Would update user dario+implementations@nullplatform.io roles in NRN 'organization=1698562351' from ['admin', 'developer', 'member', 'ops'] to ['developer', 'member'].",
+    "[DRY RUN] Would update user federico.maleh@nullplatform.io roles in NRN 'organization=1698562351' from ['admin', 'developer', 'member', 'ops', 'secops', 'insights-viewer'] to ['admin'].",
+    "[DRY RUN] Would update user sebastian.nallar+implementations@nullplatform.io roles in NRN 'organization=1698562351' from ['admin', 'developer', 'member', 'ops', 'secops', 'insights-viewer'] to ['admin'].",
+    "[DRY RUN] Would update user pablo.ilundain@nullplatform.io roles in NRN 'organization=1698562351' from ['admin', 'developer', 'member', 'ops', 'secops', 'insights-viewer'] to ['admin', 'member'].",
+    "[DRY RUN] Would update user gonzalo.rojas+implementatios@nullplatform.io roles in NRN 'organization=1698562351' from ['admin', 'developer', 'member', 'ops', 'secops', 'insights-viewer'] to ['developer', 'member'].",
+    "[DRY RUN] Would create new user carlos.new+implementations@nullplatform.io.",
+    "Synchronization completed."
+  ]
+}
