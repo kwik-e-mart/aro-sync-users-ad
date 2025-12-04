@@ -1,18 +1,11 @@
-<<<<<<< HEAD
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
-=======
-from fastapi import FastAPI, UploadFile, File, HTTPException
->>>>>>> main
 from .models import SyncResult
 from .repositories import UserRepository, AuthzRepository
 from .services import SyncService
 from .s3_service import S3Service
 from .config import config
 from .client import NullplatformClient
-<<<<<<< HEAD
 from .auth import verify_api_key
-=======
->>>>>>> main
 
 app = FastAPI(title="AD User Sync API")
 
@@ -30,12 +23,8 @@ async def sync_users(
     ad_users_file: UploadFile = File(...),
     mapping_file: UploadFile = File(...),
     dry_run: bool = False,
-<<<<<<< HEAD
     force: bool = False,
     api_key: str = Depends(verify_api_key)
-=======
-    force: bool = False
->>>>>>> main
 ):
     """
     Sync users from uploaded CSV files.
@@ -63,12 +52,8 @@ async def sync_users(
 @app.post("/sync-from-s3", response_model=SyncResult)
 async def sync_users_from_s3(
     dry_run: bool = False,
-<<<<<<< HEAD
     force: bool = False,
     api_key: str = Depends(verify_api_key)
-=======
-    force: bool = False
->>>>>>> main
 ):
     """
     Sync users from CSV files stored in S3.
