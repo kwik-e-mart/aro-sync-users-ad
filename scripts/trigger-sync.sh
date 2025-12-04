@@ -5,6 +5,7 @@
 #
 # Required environment variables:
 # - SYNC_API_URL: The URL of the sync API endpoint (e.g., http://sync-api-service:8080)
+# - API_SECRET_KEY: The shared API key for authentication
 #
 
 set -e
@@ -13,10 +14,18 @@ set -e
 SYNC_API_URL=${SYNC_API_URL:-http://localhost:8080}
 ENDPOINT="${SYNC_API_URL}/sync-from-s3"
 
+# Check if API_SECRET_KEY is set
+if [ -z "$API_SECRET_KEY" ]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: API_SECRET_KEY environment variable is not set"
+    exit 1
+fi
+
 echo "$(date '+%Y-%m-%d %H:%M:%S') - Triggering sync at: ${ENDPOINT}"
 
-# Make the API call and capture response
-RESPONSE=$(curl -s -X POST "${ENDPOINT}" -w "\n%{http_code}" || echo "000")
+# Make the API call with authentication header and capture response
+RESPONSE=$(curl -s -X POST "${ENDPOINT}" \
+    -H "X-API-Key: ${API_SECRET_KEY}" \
+    -w "\n%{http_code}" || echo "000")
 
 # Extract HTTP status code (last line) and body (all lines except last)
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)

@@ -143,7 +143,8 @@ Configura las siguientes variables de entorno en el scope:
 
 | Variable | Descripción | Ejemplo |
 |----------|-------------|---------|
-| `NULLPLATFORM_API_KEY` | API key de Nullplatform (Secret) | `MjEwOTY4NDQxNQ==...` |
+| `NULLPLATFORM_API_KEY` | API key de Nullplatform (Secret) ⚠️ | `MjEwOTY4NDQxNQ==...` |
+| `API_SECRET_KEY` | Secret compartido para autenticación (Secret) ⚠️ | `my-super-secret-key-123` |
 | `ORGANIZATION_ID` | ID de tu organización | `1850605908` |
 | `AUTH_API_URL` | URL del API de autenticación | `https://auth.nullplatform.io` |
 | `USERS_API_URL` | URL del API de usuarios | `https://users.nullplatform.io` |
@@ -153,7 +154,10 @@ Configura las siguientes variables de entorno en el scope:
 | `S3_RESULTS_PREFIX` | Prefijo para archivos de resultado | `results/` |
 | `AWS_REGION` | Región de AWS | `us-east-1` |
 
-**⚠️ Importante**: Asegúrate de que `NULLPLATFORM_API_KEY` esté marcado como **Secret** en Nullplatform.
+**⚠️ Importante**:
+- Marca `NULLPLATFORM_API_KEY` y `API_SECRET_KEY` como **Secret** en Nullplatform
+- El `API_SECRET_KEY` debe ser el mismo en ambos scopes (API REST y Cron Job)
+- Genera un valor aleatorio seguro para `API_SECRET_KEY` (ej: `openssl rand -base64 32`)
 
 #### 3.4 Configurar Service Account (Permisos S3)
 
@@ -204,13 +208,19 @@ El scope necesita permisos de lectura y escritura en S3:
 
 #### 4.3 Configurar Variables de Entorno
 
-Configura la siguiente variable de entorno:
+Configura las siguientes variables de entorno:
 
 | Variable | Descripción | Ejemplo |
 |----------|-------------|---------|
 | `SYNC_API_URL` | URL del servicio API REST | `http://sync-users-api:8080` |
+| `API_SECRET_KEY` | Secret compartido para autenticación (Secret) ⚠️ | `my-super-secret-key-123` |
 
-**Nota**: El formato de la URL depende de cómo esté configurado el servicio de Kubernetes:
+**⚠️ Importante**:
+- El valor de `API_SECRET_KEY` **debe ser exactamente el mismo** que configuraste en el scope API REST
+- Marca `API_SECRET_KEY` como **Secret** en Nullplatform
+- Este secret permite que el cron job se autentique con el API REST
+
+**Nota sobre SYNC_API_URL**: El formato depende de cómo esté configurado el servicio de Kubernetes:
 - Mismo namespace: `http://<service-name>:8080`
 - Diferente namespace: `http://<service-name>.<namespace>.svc.cluster.local:8080`
 
