@@ -114,9 +114,12 @@ Query parameters:
 - `dry_run` (boolean, default: false) - Simulate sync without making changes
 - `force` (boolean, default: false) - Force sync mode (reserved for future use)
 
+**Authentication Required**: All sync endpoints require an API key for authentication. Include the `X-API-Key` header in your requests.
+
 Example using curl:
 ```bash
 curl -X POST "http://localhost:8080/sync" \
+  -H "X-API-Key: your-secret-key-here" \
   -F "ad_users_file=@users.csv" \
   -F "mapping_file=@group_mapping.csv"
 ```
@@ -124,6 +127,7 @@ curl -X POST "http://localhost:8080/sync" \
 Example with dry run:
 ```bash
 curl -X POST "http://localhost:8080/sync?dry_run=true" \
+  -H "X-API-Key: your-secret-key-here" \
   -F "ad_users_file=@users.csv" \
   -F "mapping_file=@group_mapping.csv"
 ```
@@ -131,6 +135,7 @@ curl -X POST "http://localhost:8080/sync?dry_run=true" \
 Example with force mode:
 ```bash
 curl -X POST "http://localhost:8080/sync?force=true" \
+  -H "X-API-Key: your-secret-key-here" \
   -F "ad_users_file=@users.csv" \
   -F "mapping_file=@group_mapping.csv"
 ```

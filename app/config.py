@@ -10,6 +10,9 @@ class Config(BaseSettings):
     auth_api_url: str = "https://auth.nullplatform.io"
     users_api_url: str = "https://users.nullplatform.io"
 
+    # API Security
+    api_secret_key: str  # Shared secret for internal API authentication
+
     # S3 Configuration
     s3_bucket: str
     s3_ad_users_file: str
